@@ -25,7 +25,6 @@ NOTE:
 */
 
 struct Position {
-
 	int x;
 	int y;
 	Position(int x, int y) : x(x), y(y) {}
@@ -128,19 +127,32 @@ public:
 	}
 };
 
-class Player {
-	float hp;
+class GameObject {
 	float pos;
-	char face[100];
+	char shape[100];
+
+public:
+	GameObject(int pos, const char* shape) : pos(pos) { strcpy(this->shape, shape); }
+	virtual ~GameObject() {}
+
+	void setPosition(float pos) { this->pos = pos; }
+	float getPosition() const { return pos;  }
+	
+	void setShape(const char* shape) { if (!shape) return;  strcpy(this->shape, shape); }
+	const char* getShape() const { return shape; }
+	int getShapeSize() { return strlen(shape); }
+
+	void move(float inc) { pos += inc;  }
+	virtual void update() {};	
+};
+
+class Player : public GameObject {
+	float hp;
 	int n_blinks;
 	float damage_ratio;
 	bool isDamanaged;
 public:
-	Player(int hp = 10, int pos = 20, const char *face="(-_-)") : pos(pos), hp(hp), n_blinks(0), damage_ratio(2.0f/30) { strcpy(this->face, face); }
-	void move(int inc) { pos += inc;  }
-
-	int getPosition() const { return (int)pos;  }
-	const char* getShape() { return face; }	
+	Player(int hp = 10, int pos = 20, const char *face="(-_-)") : GameObject(pos, face), hp(hp), n_blinks(0), damage_ratio(2.0f/30) {}
 	
 	void update() {
 		if (n_blinks > 0) n_blinks--;
@@ -152,16 +164,68 @@ public:
 
 	void getDamanagedIfIntruded(float enemy_pos) 
 	{
-		if (fabs(pos - enemy_pos) > 2.0f) return;
+		if (fabs(getPosition() - enemy_pos) > 2.0f) return;
 		hp -= damage_ratio;
 		n_blinks = 2;
 	}
 
 	void display_stat() 
 	{
-		printf("hp = %2d, n_blinks = %2d", (int)hp, n_blinks);
+		printf("pos(%2.1f) hp(%2.1f), n_blinks(%2d)", getPosition(), hp, n_blinks);
 	}
 };
+
+
+
+
+class Enemy : public GameObject {
+	float hp;
+	char face[100];
+	char faceAttacked[100];
+	int nAnimations;
+	Player* target;
+	float speed = 2.0f/30;
+
+public:
+	Enemy(Player* target, int pos = 50, int hp = 5, const char* face="(*_*)", const char* faceAttacked="(>_<)") : GameObject(pos, face), target(target), nAnimations(0), hp(hp)
+	{ 
+		strcpy(this->face, face);
+		strcpy(this->faceAttacked, faceAttacked);
+	}
+	
+	void update()
+	{
+		if (!target) return;
+		float player_pos = target->getPosition();
+		float pos = getPosition();
+		if (player_pos < pos) move(-1*speed);
+		else if (player_pos > pos) move( 1*speed);
+		else { } // do not move
+
+		// attack if in range
+		target->getDamanagedIfIntruded(pos);
+
+
+		if (nAnimations == 0) return;
+		nAnimations--;
+		if (nAnimations == 0) {
+			setShape(face);
+		}
+	}
+	void OnHit()
+	{
+		hp -= 1.0f;
+		nAnimations= 30;
+		setShape(faceAttacked);
+	}
+
+	bool isAlive() {
+		return hp > 0.0f;
+	}
+
+	float getHP() { return hp; }
+};
+
 
 class Players {
 	static const int maxPlayers = 1;
@@ -184,7 +248,7 @@ public:
 		return nullptr;
 	}
 
-	
+
 	void add(Player* player)
 	{
 		if (n_players >= maxPlayers || player == nullptr) return;
@@ -239,85 +303,22 @@ public:
 			}
 		}
 		Borland::gotoxy(0, 1); printf("player "); getMainCharacter()->display_stat();
-		
-	}
-
-	
-};
-
-
-class Enemy {
-	float hp;
-	float pos;
-	char face[100];
-	char faceAttacked[100];
-	char shape[100];
-	int nAnimations;
-	Player* target;
-	float speed = 2.0f/30;
-
-public:
-	Enemy(Player* target, int pos = 50, int hp = 5, const char* face="(*_*)", const char* faceAttacked="(>_<)") : target(target), pos(pos), nAnimations(0), hp(hp)
-	{ 
-		strcpy(this->face, face);
-		strcpy(this->faceAttacked, faceAttacked);
-		strcpy(this->shape, face);
-	}
-	void move(int inc) { pos += inc; }
-	void move(float inc) { pos += inc;  }
-	int getPosition() const { return (int)pos; }
-	const char* getShape() { return shape; }	
-
-	void update()
-	{
-		if (!target) return;
-		int player_pos = target->getPosition();
-		if (player_pos < pos) move(-1*speed);
-		else if (player_pos > pos) move( 1*speed);
-		else { } // do not move
-
-		// attack if in range
-		target->getDamanagedIfIntruded(pos);
-
-
-		if (nAnimations == 0) return;
-		nAnimations--;
-		if (nAnimations == 0) {
-			strcpy(shape, face);
-		}
-	}
-	void OnHit()
-	{
-		hp -= 1.0f;
-		nAnimations= 30;
-		strcpy(shape, faceAttacked);
-	}
-
-	bool isAlive() {
-		return hp > 0.0f;
 	}
 };
 
-
-class Bullet {
-	int pos;
-	char shape[10];
+class Bullet : public GameObject {
 public:
-	Bullet(int player_pos = -1, const char* shape = ">") : pos(player_pos) {
-		strcpy(this->shape, shape);
-	}
-	void move(int inc) { pos += inc; }
-	int getPosition() { return pos; }
-	const char* getShape() { return shape; }
-	int getDirection() { return strcmp(shape, ">") == 0 ? 1 : -1; }
+	Bullet(int player_pos = -1, const char* shape = ">") : GameObject(player_pos, shape) {}
+
+	int getDirection() { return strcmp(getShape(), ">") == 0 ? 1 : -1; }
 
 	void update()
 	{
 		if (isAlive() == false) return;
-		if (strcmp(shape, ">") == 0) move(1);
-		else if (strcmp(shape, "<") == 0) move(-1);
+		if (strcmp(getShape(), ">") == 0) move(1.0f);
+		else if (strcmp(getShape(), "<") == 0) move(-1.0f);
 	}
-	bool isAlive() { return pos != -1; }
+	bool isAlive() { return getPosition() != -1.0f; }
 };
 
 
@@ -345,7 +346,11 @@ public:
 	}
 
 	void add(Enemy* enemy) {
-		if (n_enemies >= maxEnemies || enemy == nullptr) return;
+		if (enemy == nullptr) return;
+		if (n_enemies >= maxEnemies) {
+			delete enemy;
+			return;
+		}
 
 		for (int i=0; i < maxEnemies; i++)
 		{
@@ -402,7 +407,11 @@ public:
 				remove(enemies[i]);
 			}
 		}
-		Borland::gotoxy(0, 2); printf("# of enemies = %2d\n", n_enemies);
+		Borland::gotoxy(0, 2); printf("# of enemies = %2d,  ", n_enemies);
+		for (int i = 0; i < maxEnemies; i++) {
+			if (!enemies[i]) continue;
+			printf(" [%2d] %2.1f %2.1f   ", i, enemies[i]->getPosition(), enemies[i]->getHP());
+		}
 	}
 
 	void draw()
@@ -414,23 +423,24 @@ public:
 	}
 
 
-	Enemy* findClosest(int pos)
+	Enemy* findClosest(float pos)
 	{
 		Enemy* closest = nullptr;
 		float dist = 0.0f;
 		if (renderer->checkRange(pos) == false) return closest;
 		for (int i = 0; i < maxEnemies; i++) {
-			if (enemies[i] == nullptr || renderer->checkRange(enemies[i]->getPosition()) == false) continue;
-			int enemy_pos = enemies[i]->getPosition();
-			float current_dist = (pos - enemy_pos)*(pos - enemy_pos);
-			if (closest == nullptr) {
+			if (!enemies[i]) continue;
+			float enemy_pos = enemies[i]->getPosition();
+			if (renderer->checkRange(enemy_pos) == false) continue;			
+			float current_dist = fabs(pos - enemy_pos);
+			if (!closest) {
 				dist = current_dist;
 				closest = enemies[i];
 				continue;
 			}
 			// closest != nullptr;
 			if (dist > current_dist) {
-				current_dist = dist;
+				dist = current_dist;
 				closest = enemies[i];
 			}
 		}
@@ -440,14 +450,14 @@ public:
 	bool isShoted(Bullet* bullet)
 	{
 		if (!bullet) return false;
-		int bullet_pos = bullet->getPosition();
+		float bullet_pos = bullet->getPosition();
 		Enemy* enemy = findClosest(bullet_pos);
 		if (!enemy) return false;
-		int enemy_pos = enemy->getPosition();
+		float enemy_pos = enemy->getPosition();
 		int bullet_direction = bullet->getDirection();
-		if ( (bullet_direction == 1 && enemy_pos < bullet_pos && bullet_pos - enemy_pos <= 2) 
-			|| (bullet_direction == -1 && bullet_pos < enemy_pos && enemy_pos - bullet_pos <= 2)
-			|| enemy_pos == bullet_pos) {
+		if ( (bullet_direction == 1 && enemy_pos < bullet_pos && bullet_pos - enemy_pos <= 1.0f) 
+			|| (bullet_direction == -1 && bullet_pos < enemy_pos && enemy_pos - bullet_pos <= 1.0f)
+			|| (int)enemy_pos == (int)bullet_pos) {
 			enemy->OnHit();
 			return true;
 		}
@@ -517,9 +527,9 @@ public:
 		if (player == nullptr || enemies == nullptr) return;
 		Enemy* target = enemies->findClosest(player->getPosition());
 		if (target == nullptr) return;
-		int player_pos = player->getPosition();
-		int enemy_pos = target->getPosition();
-		if (player_pos == enemy_pos || renderer->checkRange(player_pos) == false || renderer->checkRange(enemy_pos) == false) return;
+		float player_pos = player->getPosition();
+		float enemy_pos = target->getPosition();
+		if (renderer->checkRange(player_pos) == false || renderer->checkRange(enemy_pos) == false) return;
 		char shape[2] = ">";
 		if (player_pos > enemy_pos) shape[0] = '<';
 		add(new Bullet(player_pos, shape));
@@ -531,7 +541,7 @@ public:
 			n_remaining_cool_time--;
 		for (int i = 0; i < maxBullets; i++) {
 			if (bullets[i] == nullptr) continue;
-			int pos = bullets[i]->getPosition();
+			float pos = bullets[i]->getPosition();
 			if (renderer->checkRange(pos) == false || enemies->isShoted(bullets[i]) == true) {
 				remove(bullets[i]);
 				continue;
