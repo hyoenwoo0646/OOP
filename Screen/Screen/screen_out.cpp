@@ -310,44 +310,45 @@ public:
 	}
 };
 
-class Players : public Container {
+class Players {
 	Renderer* renderer;
 	Player* main;
+	Container container;
 
 public:
-	Players(Renderer* renderer) : Container(1), renderer(renderer) {
-		add(new Player());
+	Players(Renderer* renderer) : container(1), renderer(renderer) {
+		container.add(new Player());
 	}
 
 	Player* getMainCharacter()
 	{
-		if (count() == 0) return nullptr;
-		for (int i = 0; i < capacity(); i++) {
-			if (at(i) != nullptr) 
-				return static_cast<Player *>(at(i));
+		if (container.count() == 0) return nullptr;
+		for (int i = 0; i < container.capacity(); i++) {
+			if (container.at(i) != nullptr) 
+				return static_cast<Player *>(container.at(i));
 		}
 		return nullptr;
 	}
 
 	void update()
 	{
-		for (int i = 0; i < capacity(); i++) {
-			if (!at(i)) continue;
-			at(i)->update();
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container.at(i)) continue;
+			container.at(i)->update();
 		}
 
-		for (int i = 0; i < capacity(); i++) {
-			if (!at(i)) continue;
-			auto player = static_cast<Player*>(at(i));
-			if (player->isAlive() == false) remove(i);
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container.at(i)) continue;
+			auto player = static_cast<Player*>(container.at(i));
+			if (player->isAlive() == false) container.remove(i);
 		}
 	}
 
 	void draw()
 	{
-		for (int i = 0; i < capacity(); i++) {
-			if (!at(i)) continue;
-			auto player = static_cast<Player*>(at(i));
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container.at(i)) continue;
+			auto player = static_cast<Player*>(container.at(i));
 			if (player->isBlinking()) {
 				renderer->draw(rand() % 2 ? player->getShape() : " ", player->getPosition());
 			}
@@ -360,17 +361,18 @@ public:
 };
 
 
-class Enemies : public Container {
-Renderer* renderer;
-	Player* target;
+class Enemies {
+	Renderer* renderer;
+	Player*   target;
+	Container container;
 
 	int n_killed;
 	int n_remainings_for_respawn;
 
 public:
 	Enemies(Renderer* renderer, Player* target) 
-		: Container(5), renderer(renderer), n_killed(0), n_remainings_for_respawn(30), target(target) {
-		add(new Enemy(target, rand() % renderer->getScreenLength() ));
+		: container(5), renderer(renderer), n_killed(0), n_remainings_for_respawn(30), target(target) {
+		container.add(new Enemy(target, rand() % renderer->getScreenLength() ));
 	}
 
 	int getNumberOfKilled() { return n_killed; }
@@ -380,34 +382,34 @@ public:
 		// enemy spawning related code
 		if (n_remainings_for_respawn <= 0) {
 			// reset the timer for the next enemy spawning
-			add(new Enemy(target, rand() % renderer->getScreenLength()));
+			container.add(new Enemy(target, rand() % renderer->getScreenLength()));
 			n_remainings_for_respawn = 30;
 		}
 		else
 			n_remainings_for_respawn--;
 
-		for (int i = 0; i < capacity(); i++) {
-			if (!at(i)) continue;
-			auto item = static_cast<Enemy*>(at(i));
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container.at(i)) continue;
+			auto item = static_cast<Enemy*>(container.at(i));
 			item->update();
 			if (item->isAlive() == false) {
 				n_killed++;
-				remove(i);
+				container.remove(i);
 			}
 		}
-		Borland::gotoxy(0, 2); printf("# of enemies = %2d,  ", count());
-		for (int i = 0; i < capacity(); i++) {
-			if (!at(i)) continue;
-			auto item = static_cast<Enemy*>(at(i));
+		Borland::gotoxy(0, 2); printf("# of enemies = %2d,  ", container.count());
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container.at(i)) continue;
+			auto item = static_cast<Enemy*>(container.at(i));
 			printf(" [%2d] %2.1f %2.1f   ", i, item->getPosition(), item->getHP());
 		}
 	}
 
 	void draw()
 	{
-		for (int i = 0; i < capacity(); i++) {
-			if (!at(i)) continue;
-			auto enemy = at(i);
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container.at(i)) continue;
+			auto enemy = container.at(i);
 			renderer->draw(enemy->getShape(), enemy->getPosition());
 		}
 	}
@@ -417,9 +419,9 @@ public:
 		GameObject* closest = nullptr;
 		float dist = 0.0f;
 		if (renderer->checkRange(pos) == false) return closest;
-		for (int i = 0; i < capacity(); i++) {
-			if (!at(i)) continue;
-			auto enemy = at(i);
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container.at(i)) continue;
+			auto enemy = container.at(i);
 			float enemy_pos = enemy->getPosition();
 			if (renderer->checkRange(enemy_pos) == false) continue;			
 			float current_dist = fabs(pos - enemy_pos);
@@ -456,15 +458,16 @@ public:
 };
 
 
-class Bullets : public Container {
+class Bullets {
 	Renderer* renderer;
 	Players* players;
 	Enemies* enemies;
+	Container container;
 	int n_remaining_cool_time;
 
 public:
 	Bullets(Renderer* renderer, Players* players, Enemies* enemies) 
-	: Container(10), renderer(renderer), players(players), enemies(enemies), n_remaining_cool_time(0) { }
+	: container(10), renderer(renderer), players(players), enemies(enemies), n_remaining_cool_time(0) { }
 
 	void add(GameObject* bullet) {
 		if (!bullet) return;
@@ -473,14 +476,14 @@ public:
 			delete bullet;
 			return;
 		}
-		if (count() >= capacity()) {
+		if (container.count() >= container.capacity()) {
 			if (n_remaining_cool_time == 0) {
 				n_remaining_cool_time = 30*2;
 			}
 			delete bullet;
 			return;
 		}
-		Container::add(bullet);
+		container.add(bullet);
 	}
 	
 	void fire(const Player* player)
@@ -500,26 +503,26 @@ public:
 	{
 		if (n_remaining_cool_time > 0)
 			n_remaining_cool_time--;
-		for (int i = 0; i < capacity(); i++) {
-			if (!at(i)) continue;
-			auto bullet = at(i);
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container.at(i)) continue;
+			auto bullet = container.at(i);
 			float pos = bullet->getPosition();
 			if (renderer->checkRange(pos) == false || enemies->isShoted(static_cast<Bullet *>(bullet)) == true) {
-				remove(bullet);
+				container.remove(bullet);
 				continue;
 			}
 			bullet->update();
 		}
-		Borland::gotoxy(0, 3); printf("# of bullets = %2d ", count());
+		Borland::gotoxy(0, 3); printf("# of bullets = %2d ", container.count());
 		printf("%5s\n", n_remaining_cool_time == 0 ? "ready" : " ");
 	}
 
 	void draw()
 	{
-		for (int i = 0; i < capacity() ; i++)
+		for (int i = 0; i < container.capacity() ; i++)
 		{
-			if (!at(i)) continue;
-			auto bullet = at(i);
+			if (!container.at(i)) continue;
+			auto bullet = container.at(i);
 			renderer->draw(bullet->getShape(), bullet->getPosition());
 		}
 	}
