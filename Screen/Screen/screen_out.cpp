@@ -68,7 +68,6 @@ public:
 		srand(10);
 	}
 
-
 	bool checkRange(const char* shape, int pos)
 	{
 		if (!shape) return false;
@@ -86,7 +85,8 @@ public:
 		return pos >= 0 && pos < (screen_size - 1);
 	}
 
-	void clear() {
+	void clear() 
+	{
 		memset( display, ' ', screen_size);
 		display[screen_size] = '\n';
 		display[screen_size+1] = '\0';
@@ -121,10 +121,7 @@ public:
 		Borland::gotoxy(&origin);
 	}
 
-	int getScreenLength()
-	{
-		return screen_size;
-	}
+	int getScreenLength() {	return screen_size;	}
 };
 
 class GameObject {
@@ -143,7 +140,8 @@ public:
 	int getShapeSize() { return strlen(shape); }
 
 	void move(float inc) { pos += inc;  }
-	virtual void update() {};	
+	virtual void update() {}
+	virtual void draw() {}
 };
 
 class Player : public GameObject {
@@ -205,7 +203,6 @@ public:
 		// attack if in range
 		target->getDamanagedIfIntruded(pos);
 
-
 		if (nAnimations == 0) return;
 		nAnimations--;
 		if (nAnimations == 0) {
@@ -226,86 +223,6 @@ public:
 	float getHP() { return hp; }
 };
 
-
-class Players {
-	static const int maxPlayers = 1;
-	int n_players;
-	Player* players[maxPlayers];
-	Renderer* renderer;
-	Player* main;
-
-public:
-	Players(Renderer* renderer) : renderer(renderer), n_players(0) {
-		for (int i = 0; i < maxPlayers; i++) players[i] = nullptr;
-		add(new Player());
-	}
-
-	Player* getMainCharacter()
-	{
-		if (n_players == 0) return nullptr;
-		for (int i = 0; i < maxPlayers; i++)
-			if (players[i] != nullptr) return players[i];
-		return nullptr;
-	}
-
-
-	void add(Player* player)
-	{
-		if (n_players >= maxPlayers || player == nullptr) return;
-		for (int i = 0; i < maxPlayers; i++) {
-			if (players[i] == nullptr) {
-				players[i] = player;
-				n_players++;
-				return;
-			}
-		}
-		delete player;
-		Borland::gotoxy(0, 2);  printf("there is no room for adding a new player");
-	}
-
-	void remove(Player* player)
-	{
-		if (n_players == 0 || player == nullptr) return;
-		for (int i = 0; i < maxPlayers; i++) {
-			if (players[i] == player) {
-				delete players[i];
-				n_players--;
-				players[i] = nullptr;
-				return;
-			}
-		}
-	}
-
-	void update()
-	{
-		for (int i = 0; i < maxPlayers; i++) {
-			if (players[i] == nullptr) continue;
-			players[i]->update();
-		}
-
-		for (int i = 0; i < maxPlayers; i++) {
-			if (players[i] == nullptr) continue;
-			if (players[i]->isAlive() == false) {
-				remove(players[i]);
-			}
-		}
-	}
-
-	void draw()
-	{
-		for (int i = 0; i < maxPlayers; i++) {
-			if (players[i] == nullptr) continue;
-			if (players[i]->isBlinking()) {
-				renderer->draw(rand() % 2 ? players[i]->getShape() : " ", players[i]->getPosition());
-			}
-			else {
-				renderer->draw(players[i]->getShape(), players[i]->getPosition());
-			}
-		}
-		Borland::gotoxy(0, 1); printf("player "); getMainCharacter()->display_stat();
-	}
-};
-
 class Bullet : public GameObject {
 public:
 	Bullet(int player_pos = -1, const char* shape = ">") : GameObject(player_pos, shape) {}
@@ -321,72 +238,142 @@ public:
 	bool isAlive() { return getPosition() != -1.0f; }
 };
 
+class Container {
+	const int maxItems;
+	int nItems;
+	GameObject** items;
+public:
+	Container(int maxItems) : maxItems(maxItems), nItems(0), items(new GameObject*[maxItems]) {
+		for (int i = 0; i < maxItems; i++) items[i] = nullptr;
+	}
+	~Container() {
+		while (nItems > 0) {
+			remove(items[0]);
+		}
+		delete[] items;
+	}
 
-class Enemies {
-	static const int maxEnemies = 5;
-	int n_enemies;
-	Enemy* enemies[maxEnemies];
-	int n_killed;
+	int capacity() const { return maxItems; }
 
+	int count() const { return nItems;  }
+
+	GameObject* at(int idx){
+		if (idx < 0 || nItems > maxItems) return nullptr;
+		return items[idx];
+	}
+
+	void add(GameObject* obj)
+	{
+		if (!obj) return;
+		if (nItems >= maxItems) {
+			delete obj;
+			return;
+		}
+		for (int i = 0; i < maxItems; i++)
+		{
+			if (items[i] == nullptr) {
+				items[i] = obj;
+				nItems++;
+				return;
+			}
+		}
+		delete obj;
+	}
+
+	void remove(int i)
+	{
+		if (i == -1 || i < 0 || i >= maxItems) return;
+		delete items[i];
+		items[i] = nullptr;
+		nItems--;
+	}
+
+	void remove(GameObject* obj)
+	{
+		int idx = indexOf(obj);
+		if (idx == -1) {
+			if (obj != nullptr)
+				delete obj;
+			return;
+		}
+		remove(idx);
+	}
+
+	int indexOf(GameObject* obj)
+	{
+		if (!obj) return -1;
+		for (int i = 0; i < maxItems; i++) {
+			if (items[i] == obj)
+				return i;
+		}
+		return -1;
+	}
+};
+
+class Players : public Container {
 	Renderer* renderer;
+	Player* main;
+
+public:
+	Players(Renderer* renderer) : Container(1), renderer(renderer) {
+		add(new Player());
+	}
+
+	Player* getMainCharacter()
+	{
+		if (count() == 0) return nullptr;
+		for (int i = 0; i < capacity(); i++) {
+			if (at(i) != nullptr) 
+				return static_cast<Player *>(at(i));
+		}
+		return nullptr;
+	}
+
+	void update()
+	{
+		for (int i = 0; i < capacity(); i++) {
+			if (!at(i)) continue;
+			at(i)->update();
+		}
+
+		for (int i = 0; i < capacity(); i++) {
+			if (!at(i)) continue;
+			auto player = static_cast<Player*>(at(i));
+			if (player->isAlive() == false) remove(i);
+		}
+	}
+
+	void draw()
+	{
+		for (int i = 0; i < capacity(); i++) {
+			if (!at(i)) continue;
+			auto player = static_cast<Player*>(at(i));
+			if (player->isBlinking()) {
+				renderer->draw(rand() % 2 ? player->getShape() : " ", player->getPosition());
+			}
+			else {
+				renderer->draw(player->getShape(), player->getPosition());
+			}
+		}
+		Borland::gotoxy(0, 1); printf("player "); getMainCharacter()->display_stat();
+	}
+};
+
+
+class Enemies : public Container {
+Renderer* renderer;
 	Player* target;
 
+	int n_killed;
 	int n_remainings_for_respawn;
 
 public:
 	Enemies(Renderer* renderer, Player* target) 
-		: renderer(renderer), n_enemies(0), n_killed(0), n_remainings_for_respawn(30), target(target) {
-		for (int i = 0; i < maxEnemies; i++) enemies[i] = nullptr;
+		: Container(5), renderer(renderer), n_killed(0), n_remainings_for_respawn(30), target(target) {
 		add(new Enemy(target, rand() % renderer->getScreenLength() ));
 	}
 
-	int getNumberOfKilled()
-	{
-		return n_killed;
-	}
-
-	void add(Enemy* enemy) {
-		if (enemy == nullptr) return;
-		if (n_enemies >= maxEnemies) {
-			delete enemy;
-			return;
-		}
-
-		for (int i=0; i < maxEnemies; i++)
-		{
-			if (enemies[i] == nullptr) {
-				// found an empty slot
-				enemies[i] = enemy;
-				n_enemies++;
-				return;
-			}
-		}
-		delete enemy;
-	}
-
-	void remove(Enemy* enemy) {
-		if (n_enemies == 0 || enemy == nullptr) return;
-
-		for (int i = 0; i < maxEnemies; i++)
-		{
-			if (enemies[i] == enemy) {
-				delete enemies[i];
-				n_enemies--;
-				enemies[i] = nullptr;
-				return;
-			}
-		}
-	}
-
-	int indexOf(Enemy* enemy) {
-		if (n_enemies == 0 || enemy == nullptr) return -1;
-
-		for (int i = 0; i < maxEnemies; i++) 
-		{
-			if (enemies[i] == enemy) return i;
-		}
-		return -1;
-	}
+	int getNumberOfKilled() { return n_killed; }
 
 	void update()
 	{
@@ -399,49 +386,52 @@ public:
 		else
 			n_remainings_for_respawn--;
 
-		for (int i = 0; i < maxEnemies; i++) {
-			if (enemies[i] == nullptr) continue;
-			enemies[i]->update();
-			if (enemies[i]->isAlive() == false) {
+		for (int i = 0; i < capacity(); i++) {
+			if (!at(i)) continue;
+			auto item = static_cast<Enemy*>(at(i));
+			item->update();
+			if (item->isAlive() == false) {
 				n_killed++;
-				remove(enemies[i]);
+				remove(i);
 			}
 		}
-		Borland::gotoxy(0, 2); printf("# of enemies = %2d,  ", n_enemies);
-		for (int i = 0; i < maxEnemies; i++) {
-			if (!enemies[i]) continue;
-			printf(" [%2d] %2.1f %2.1f   ", i, enemies[i]->getPosition(), enemies[i]->getHP());
+		Borland::gotoxy(0, 2); printf("# of enemies = %2d,  ", count());
+		for (int i = 0; i < capacity(); i++) {
+			if (!at(i)) continue;
+			auto item = static_cast<Enemy*>(at(i));
+			printf(" [%2d] %2.1f %2.1f   ", i, item->getPosition(), item->getHP());
 		}
 	}
 
 	void draw()
 	{
-		for (int i = 0; i < maxEnemies; i++) {
-			if (enemies[i] == nullptr) continue;
-			renderer->draw(enemies[i]->getShape(), enemies[i]->getPosition());
+		for (int i = 0; i < capacity(); i++) {
+			if (!at(i)) continue;
+			auto enemy = at(i);
+			renderer->draw(enemy->getShape(), enemy->getPosition());
 		}
 	}
 
-
-	Enemy* findClosest(float pos)
+	GameObject* findClosest(float pos)
 	{
-		Enemy* closest = nullptr;
+		GameObject* closest = nullptr;
 		float dist = 0.0f;
 		if (renderer->checkRange(pos) == false) return closest;
-		for (int i = 0; i < maxEnemies; i++) {
-			if (!enemies[i]) continue;
-			float enemy_pos = enemies[i]->getPosition();
+		for (int i = 0; i < capacity(); i++) {
+			if (!at(i)) continue;
+			auto enemy = at(i);
+			float enemy_pos = enemy->getPosition();
 			if (renderer->checkRange(enemy_pos) == false) continue;			
 			float current_dist = fabs(pos - enemy_pos);
 			if (!closest) {
 				dist = current_dist;
-				closest = enemies[i];
+				closest = enemy;
 				continue;
 			}
 			// closest != nullptr;
 			if (dist > current_dist) {
 				dist = current_dist;
-				closest = enemies[i];
+				closest = enemy;
 			}
 		}
 		return closest;
@@ -451,7 +441,7 @@ public:
 	{
 		if (!bullet) return false;
 		float bullet_pos = bullet->getPosition();
-		Enemy* enemy = findClosest(bullet_pos);
+		auto enemy = static_cast<Enemy*>(findClosest(bullet_pos));
 		if (!enemy) return false;
 		float enemy_pos = enemy->getPosition();
 		int bullet_direction = bullet->getDirection();
@@ -466,12 +456,7 @@ public:
 };
 
 
-
-
-class Bullets {
-	static const int maxBullets = 10;
-	int n_bullets;
-	Bullet* bullets[maxBullets];
+class Bullets : public Container {
 	Renderer* renderer;
 	Players* players;
 	Enemies* enemies;
@@ -479,53 +464,29 @@ class Bullets {
 
 public:
 	Bullets(Renderer* renderer, Players* players, Enemies* enemies) 
-	: renderer(renderer), players(players), enemies(enemies), n_bullets(0), n_remaining_cool_time(0) {
-		for (int i = 0; i < maxBullets; i++) bullets[i] = nullptr;
-	}
+	: Container(10), renderer(renderer), players(players), enemies(enemies), n_remaining_cool_time(0) { }
 
-	void add(Bullet* bullet) {
+	void add(GameObject* bullet) {
 		if (!bullet) return;
 		if (n_remaining_cool_time > 0) {
 			n_remaining_cool_time--;
 			delete bullet;
 			return;
 		}
-		if (n_bullets >= maxBullets) {
+		if (count() >= capacity()) {
 			if (n_remaining_cool_time == 0) {
 				n_remaining_cool_time = 30*2;
 			}
 			delete bullet;
 			return;
 		}
-		for (int i = 0; i < maxBullets; i++)
-		{
-			if (bullets[i] == nullptr) {
-				bullets[i] = bullet;
-				n_bullets++;
-				return;
-			}
-		}
-		delete bullet;
+		Container::add(bullet);
 	}
-
-	void remove(Bullet* bullet) {
-		if (n_bullets == 0 || bullet == nullptr) return;
-
-		for (int i = 0; i < maxBullets; i++)
-		{
-			if (bullets[i] == bullet) {
-				delete bullets[i];
-				n_bullets--;
-				bullets[i] = nullptr;
-				return;
-			}
-		}
-	}
-
+	
 	void fire(const Player* player)
 	{
 		if (player == nullptr || enemies == nullptr) return;
-		Enemy* target = enemies->findClosest(player->getPosition());
+		GameObject* target = enemies->findClosest(player->getPosition());
 		if (target == nullptr) return;
 		float player_pos = player->getPosition();
 		float enemy_pos = target->getPosition();
@@ -539,25 +500,27 @@ public:
 	{
 		if (n_remaining_cool_time > 0)
 			n_remaining_cool_time--;
-		for (int i = 0; i < maxBullets; i++) {
-			if (bullets[i] == nullptr) continue;
-			float pos = bullets[i]->getPosition();
-			if (renderer->checkRange(pos) == false || enemies->isShoted(bullets[i]) == true) {
-				remove(bullets[i]);
+		for (int i = 0; i < capacity(); i++) {
+			if (!at(i)) continue;
+			auto bullet = at(i);
+			float pos = bullet->getPosition();
+			if (renderer->checkRange(pos) == false || enemies->isShoted(static_cast<Bullet *>(bullet)) == true) {
+				remove(bullet);
 				continue;
 			}
-			bullets[i]->update();
+			bullet->update();
 		}
-		Borland::gotoxy(0, 3); printf("# of bullets = %2d ", n_bullets);
+		Borland::gotoxy(0, 3); printf("# of bullets = %2d ", count());
 		printf("%5s\n", n_remaining_cool_time == 0 ? "ready" : " ");
 	}
 
 	void draw()
 	{
-		for (int i = 0; i < maxBullets; i++)
+		for (int i = 0; i < capacity() ; i++)
 		{
-			if (bullets[i] == nullptr) continue;
-			renderer->draw(bullets[i]->getShape(), bullets[i]->getPosition());
+			if (!at(i)) continue;
+			auto bullet = at(i);
+			renderer->draw(bullet->getShape(), bullet->getPosition());
 		}
 	}
 };
@@ -569,7 +532,6 @@ int main()
 	Player* main = players.getMainCharacter();
 	Enemies enemies(&renderer, main);
 	Bullets bullets(&renderer, &players, &enemies);
-
 	
 	clock_t current_tick, last_tick;
 
@@ -620,7 +582,6 @@ int main()
 	current_tick = clock();
 	Borland::gotoxy(0, 1); printf("# of killed enemies = %d, elapsed survival duration = %d seconds\n", enemies.getNumberOfKilled(),
 		(current_tick - last_tick) / CLOCKS_PER_SEC );
-
 
 	return 0;
 }

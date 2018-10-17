@@ -1,16 +1,1 @@
-﻿  screen_out.cpp
-d:\workingspace\oop\screen\screen\screen_out.cpp(135): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(155): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(191): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(299): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(302): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(421): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(430): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(434): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(435): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(532): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(535): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(545): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-d:\workingspace\oop\screen\screen\screen_out.cpp(560): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-  Screen.vcxproj -> D:\WorkingSpace\OOP\Screen\Debug\Screen.exe
-  Screen.vcxproj -> D:\WorkingSpace\OOP\Screen\Debug\Screen.pdb (Full PDB)
+﻿
