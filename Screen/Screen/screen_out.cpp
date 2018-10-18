@@ -1,10 +1,13 @@
 #define _CRT_SECURE_NO_WARNINGS
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
-#include <math.h>
+#include <iostream>
+#include <cstring>
+#include <ctime>
+#include <cmath>
 #include <Windows.h>
+#include <iterator>
 #include <conio.h>
+
+using namespace std;
 
 /*
 1. Enemy hp 부여, 초기값 hp = 10, hp == 0이 되면 적은 죽으며 화면에서 보이지 않음.
@@ -238,12 +241,13 @@ public:
 	bool isAlive() { return getPosition() != -1.0f; }
 };
 
+template<typename T>
 class Container {
 	const int maxItems;
 	int nItems;
-	GameObject** items;
+	T** items;
 public:
-	Container(int maxItems) : maxItems(maxItems), nItems(0), items(new GameObject*[maxItems]) {
+	Container(int maxItems) : maxItems(maxItems), nItems(0), items(new T*[maxItems]) {
 		for (int i = 0; i < maxItems; i++) items[i] = nullptr;
 	}
 	~Container() {
@@ -257,12 +261,16 @@ public:
 
 	int count() const { return nItems;  }
 
-	GameObject* at(int idx){
+	T* at(int idx) {
 		if (idx < 0 || nItems > maxItems) return nullptr;
 		return items[idx];
+	}	
+
+	T* operator[](int idx) {
+		return at(idx);
 	}
 
-	void add(GameObject* obj)
+	void add(T* obj)
 	{
 		if (!obj) return;
 		if (nItems >= maxItems) {
@@ -288,7 +296,7 @@ public:
 		nItems--;
 	}
 
-	void remove(GameObject* obj)
+	void remove(T* obj)
 	{
 		int idx = indexOf(obj);
 		if (idx == -1) {
@@ -299,7 +307,7 @@ public:
 		remove(idx);
 	}
 
-	int indexOf(GameObject* obj)
+	int indexOf(T* obj)
 	{
 		if (!obj) return -1;
 		for (int i = 0; i < maxItems; i++) {
@@ -313,7 +321,7 @@ public:
 class Players {
 	Renderer* renderer;
 	Player* main;
-	Container container;
+	Container<Player> container;
 
 public:
 	Players(Renderer* renderer) : container(1), renderer(renderer) {
@@ -325,7 +333,7 @@ public:
 		if (container.count() == 0) return nullptr;
 		for (int i = 0; i < container.capacity(); i++) {
 			if (container.at(i) != nullptr) 
-				return static_cast<Player *>(container.at(i));
+				return container[i];
 		}
 		return nullptr;
 	}
@@ -334,12 +342,12 @@ public:
 	{
 		for (int i = 0; i < container.capacity(); i++) {
 			if (!container.at(i)) continue;
-			container.at(i)->update();
+			container[i]->update();
 		}
 
 		for (int i = 0; i < container.capacity(); i++) {
-			if (!container.at(i)) continue;
-			auto player = static_cast<Player*>(container.at(i));
+			if (!container[i]) continue;
+			auto player = container[i];
 			if (player->isAlive() == false) container.remove(i);
 		}
 	}
@@ -347,8 +355,8 @@ public:
 	void draw()
 	{
 		for (int i = 0; i < container.capacity(); i++) {
-			if (!container.at(i)) continue;
-			auto player = static_cast<Player*>(container.at(i));
+			if (!container[i]) continue;
+			auto player = container[i];
 			if (player->isBlinking()) {
 				renderer->draw(rand() % 2 ? player->getShape() : " ", player->getPosition());
 			}
@@ -364,7 +372,7 @@ public:
 class Enemies {
 	Renderer* renderer;
 	Player*   target;
-	Container container;
+	Container<Enemy> container;
 
 	int n_killed;
 	int n_remainings_for_respawn;
@@ -389,8 +397,8 @@ public:
 			n_remainings_for_respawn--;
 
 		for (int i = 0; i < container.capacity(); i++) {
-			if (!container.at(i)) continue;
-			auto item = static_cast<Enemy*>(container.at(i));
+			if (!container[i]) continue;
+			auto item = container[i];
 			item->update();
 			if (item->isAlive() == false) {
 				n_killed++;
@@ -399,8 +407,8 @@ public:
 		}
 		Borland::gotoxy(0, 2); printf("# of enemies = %2d,  ", container.count());
 		for (int i = 0; i < container.capacity(); i++) {
-			if (!container.at(i)) continue;
-			auto item = static_cast<Enemy*>(container.at(i));
+			if (!container[i]) continue;
+			auto item = container[i];
 			printf(" [%2d] %2.1f %2.1f   ", i, item->getPosition(), item->getHP());
 		}
 	}
@@ -408,20 +416,20 @@ public:
 	void draw()
 	{
 		for (int i = 0; i < container.capacity(); i++) {
-			if (!container.at(i)) continue;
-			auto enemy = container.at(i);
+			if (!container[i]) continue;
+			auto enemy = container[i];
 			renderer->draw(enemy->getShape(), enemy->getPosition());
 		}
 	}
 
-	GameObject* findClosest(float pos)
+	Enemy* findClosest(float pos)
 	{
-		GameObject* closest = nullptr;
+		Enemy* closest = nullptr;
 		float dist = 0.0f;
 		if (renderer->checkRange(pos) == false) return closest;
 		for (int i = 0; i < container.capacity(); i++) {
-			if (!container.at(i)) continue;
-			auto enemy = container.at(i);
+			if (!container[i]) continue;
+			auto enemy = container[i];
 			float enemy_pos = enemy->getPosition();
 			if (renderer->checkRange(enemy_pos) == false) continue;			
 			float current_dist = fabs(pos - enemy_pos);
@@ -443,7 +451,7 @@ public:
 	{
 		if (!bullet) return false;
 		float bullet_pos = bullet->getPosition();
-		auto enemy = static_cast<Enemy*>(findClosest(bullet_pos));
+		auto enemy = findClosest(bullet_pos);
 		if (!enemy) return false;
 		float enemy_pos = enemy->getPosition();
 		int bullet_direction = bullet->getDirection();
@@ -462,14 +470,14 @@ class Bullets {
 	Renderer* renderer;
 	Players* players;
 	Enemies* enemies;
-	Container container;
+	Container<Bullet> container;
 	int n_remaining_cool_time;
 
 public:
 	Bullets(Renderer* renderer, Players* players, Enemies* enemies) 
 	: container(10), renderer(renderer), players(players), enemies(enemies), n_remaining_cool_time(0) { }
 
-	void add(GameObject* bullet) {
+	void add(Bullet* bullet) {
 		if (!bullet) return;
 		if (n_remaining_cool_time > 0) {
 			n_remaining_cool_time--;
@@ -489,7 +497,7 @@ public:
 	void fire(const Player* player)
 	{
 		if (player == nullptr || enemies == nullptr) return;
-		GameObject* target = enemies->findClosest(player->getPosition());
+		Enemy* target = enemies->findClosest(player->getPosition());
 		if (target == nullptr) return;
 		float player_pos = player->getPosition();
 		float enemy_pos = target->getPosition();
@@ -504,10 +512,10 @@ public:
 		if (n_remaining_cool_time > 0)
 			n_remaining_cool_time--;
 		for (int i = 0; i < container.capacity(); i++) {
-			if (!container.at(i)) continue;
-			auto bullet = container.at(i);
+			if (!container[i]) continue;
+			auto bullet = container[i];
 			float pos = bullet->getPosition();
-			if (renderer->checkRange(pos) == false || enemies->isShoted(static_cast<Bullet *>(bullet)) == true) {
+			if (renderer->checkRange(pos) == false || enemies->isShoted(bullet) == true) {
 				container.remove(bullet);
 				continue;
 			}
@@ -521,8 +529,8 @@ public:
 	{
 		for (int i = 0; i < container.capacity() ; i++)
 		{
-			if (!container.at(i)) continue;
-			auto bullet = container.at(i);
+			if (!container[i]) continue;
+			auto bullet = container[i];
 			renderer->draw(bullet->getShape(), bullet->getPosition());
 		}
 	}
