@@ -245,9 +245,9 @@ template<typename T>
 class Container {
 	const int maxItems;
 	int nItems;
-	T** items;
+	T* items;
 public:
-	Container(int maxItems) : maxItems(maxItems), nItems(0), items(new T*[maxItems]) {
+	Container(int maxItems) : maxItems(maxItems), nItems(0), items(new T[maxItems]) {
 		for (int i = 0; i < maxItems; i++) items[i] = nullptr;
 	}
 	~Container() {
@@ -261,16 +261,16 @@ public:
 
 	int count() const { return nItems;  }
 
-	T* at(int idx) {
+	T at(int idx) {
 		if (idx < 0 || nItems > maxItems) return nullptr;
 		return items[idx];
 	}	
 
-	T* operator[](int idx) {
+	T operator[](int idx) {
 		return at(idx);
 	}
 
-	void add(T* obj)
+	void add(T obj)
 	{
 		if (!obj) return;
 		if (nItems >= maxItems) {
@@ -296,7 +296,7 @@ public:
 		nItems--;
 	}
 
-	void remove(T* obj)
+	void remove(T obj)
 	{
 		int idx = indexOf(obj);
 		if (idx == -1) {
@@ -307,7 +307,7 @@ public:
 		remove(idx);
 	}
 
-	int indexOf(T* obj)
+	int indexOf(T obj)
 	{
 		if (!obj) return -1;
 		for (int i = 0; i < maxItems; i++) {
@@ -321,7 +321,7 @@ public:
 class Players {
 	Renderer* renderer;
 	Player* main;
-	Container<Player> container;
+	Container<Player*> container;
 
 public:
 	Players(Renderer* renderer) : container(1), renderer(renderer) {
@@ -372,7 +372,7 @@ public:
 class Enemies {
 	Renderer* renderer;
 	Player*   target;
-	Container<Enemy> container;
+	Container<Enemy*> container;
 
 	int n_killed;
 	int n_remainings_for_respawn;
@@ -470,7 +470,7 @@ class Bullets {
 	Renderer* renderer;
 	Players* players;
 	Enemies* enemies;
-	Container<Bullet> container;
+	Container<Bullet*> container;
 	int n_remaining_cool_time;
 
 public:
