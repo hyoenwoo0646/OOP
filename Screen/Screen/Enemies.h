@@ -17,7 +17,7 @@ public:
 	Enemies(Renderer* renderer, Player* target)
 		: container(5), renderer(renderer), n_killed(0), n_remainings_for_respawn(30), target(target)
 	{
-		container.add(new Enemy(target, rand() % renderer->getScreenLength()));
+		container.add(new Enemy(renderer, target, rand() % renderer->getScreenLength()));
 	}
 
 	int getNumberOfKilled() { return n_killed; }
@@ -27,7 +27,7 @@ public:
 		// enemy spawning related code
 		if (n_remainings_for_respawn <= 0) {
 			// reset the timer for the next enemy spawning
-			container.add(new Enemy(target, rand() % renderer->getScreenLength()));
+			container.add(new Enemy(renderer, target, rand() % renderer->getScreenLength()));
 			n_remainings_for_respawn = 30;
 		}
 		else
@@ -42,21 +42,20 @@ public:
 				container.remove(i);
 			}
 		}
-		for (int i = 0; i < container.capacity(); i++) {
-			if (!container[i]) continue;
-			auto item = container[i];
-			printf(" [%2d] %2.1f %2.1f   ", i, item->getPosition(), item->getHP());
-		}
 	}
 
 	void draw()
 	{
 		for (int i = 0; i < container.capacity(); i++) {
 			if (!container[i]) continue;
-			auto enemy = container[i];
-			renderer->draw(enemy->getShape(), enemy->getPosition());
+			container[i]->draw();
 		}
 		Borland::gotoxy(0, 2); printf("# of enemies = %2d,  ", container.count());
+		for (int i = 0; i < container.capacity(); i++) {
+			if (!container[i]) continue;
+			auto item = container[i];
+			printf(" [%2d] %2.1f %2.1f   ", i, item->getPosition(), item->getHP());
+		}
 	}
 
 	Enemy* findClosest(float pos)
@@ -87,18 +86,9 @@ public:
 	bool isShoted(Bullet* bullet)
 	{
 		if (!bullet) return false;
-		float bullet_pos = bullet->getPosition();
-		auto enemy = findClosest(bullet_pos);
+		auto enemy = findClosest(bullet->getPosition());
 		if (!enemy) return false;
-		float enemy_pos = enemy->getPosition();
-		int bullet_direction = bullet->getDirection();
-		if ((bullet_direction == 1 && enemy_pos < bullet_pos && bullet_pos - enemy_pos <= 1.0f)
-			|| (bullet_direction == -1 && bullet_pos < enemy_pos && enemy_pos - bullet_pos <= 1.0f)
-			|| (int)enemy_pos == (int)bullet_pos) {
-			enemy->OnHit();
-			return true;
-		}
-		return false;
+		return enemy->getDamagedIfAttacked(bullet);
 	}
 };
 

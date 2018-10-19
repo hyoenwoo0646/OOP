@@ -49,7 +49,7 @@ public:
 		if (renderer->checkRange(player_pos) == false || renderer->checkRange(enemy_pos) == false) return;
 		char shape[2] = ">";
 		if (player_pos > enemy_pos) shape[0] = '<';
-		add(new Bullet(player_pos, shape));
+		add(new Bullet(renderer, player_pos, shape));
 	}
 
 	void update()
@@ -75,8 +75,7 @@ public:
 		for (int i = 0; i < container.capacity(); i++)
 		{
 			if (!container[i]) continue;
-			auto bullet = container[i];
-			renderer->draw(bullet->getShape(), bullet->getPosition());
+			container[i]->draw();
 		}
 	}
 };

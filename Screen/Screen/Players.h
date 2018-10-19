@@ -15,7 +15,7 @@ class Players {
 public:
 	Players(Renderer* renderer) : container(1), renderer(renderer)
 	{
-		container.add(new Player());
+		container.add(new BlinkablePlayer(renderer));
 	}
 
 	Player* getMainCharacter()
@@ -36,8 +36,7 @@ public:
 
 		for (int i = 0; i < container.capacity(); i++) {
 			if (!container[i]) continue;
-			auto player = container[i];
-			if (player->isAlive() == false) container.remove(i);
+			if (container[i]->isAlive() == false) container.remove(i);
 		}
 	}
 
@@ -45,20 +44,11 @@ public:
 	{
 		for (int i = 0; i < container.capacity(); i++) {
 			if (!container[i]) continue;
-			auto player = container[i];
-			if (player->isBlinking()) {
-				renderer->draw(rand() % 2 ? player->getShape() : " ", player->getPosition());
-			}
-			else {
-				renderer->draw(player->getShape(), player->getPosition());
-			}
+			container[i]->draw();
 		}
 		Borland::gotoxy(0, 1); printf("player "); getMainCharacter()->displayStat();
 	}
 };
-
-
-
 
 #endif
 

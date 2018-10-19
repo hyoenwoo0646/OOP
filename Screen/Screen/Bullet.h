@@ -6,9 +6,9 @@
 
 class Bullet : public GameObject {
 public:
-	Bullet(int player_pos = -1, const char* shape = ">") : GameObject(player_pos, shape) {}
+	Bullet(Renderer* renderer, int player_pos = -1, const char* shape = ">") : GameObject(renderer, player_pos, shape) {}
 
-	int getDirection()
+	int getDirection() const 
 	{
 		return strcmp(getShape(), ">") == 0 ? 1 : -1;
 	}

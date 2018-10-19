@@ -1,16 +1,38 @@
 #ifndef PLAYER_H_
 #define PLAYER_H_
 
+#include <ctime>
 #include "GameObject.h"
 
-class Player : public GameObject {
+class Player : public GameObject, Damageable {
 	float	hp;
-	int		nBlinks;
-	float	damageRatio;
-	bool	isDamanaged;
+	
 public:
-	Player(int hp = 10, int pos = 20, const char *face = "(-_-)")
-		: GameObject(pos, face), hp(hp), nBlinks(0), damageRatio(2.0f / 30)
+	Player(Renderer* renderer, int hp = 10, int pos = 20, const char *face= "(-_-)")
+		: GameObject(renderer, pos, face), Damageable(2.0f/30), hp(hp)
+	{}
+
+	bool isAlive() { return hp > 0.0f; }
+
+	bool getDamagedIfAttacked(const GameObject* attacker)
+	{
+		if (!attacker) return false;
+		if (fabs(getPosition() - attacker->getPosition()) > 2.0f) return false;
+		hp -= getDamage();
+		return true;
+	}
+
+	virtual void displayStat()
+	{
+		printf("pos(%2.1f) hp(%2.1f) ", getPosition(), hp);
+	}
+};
+
+class BlinkablePlayer : public Player {
+	int		nBlinks;
+public:
+	BlinkablePlayer(Renderer* renderer, int hp = 10, int pos = 20 )
+		: Player(renderer, hp, pos), nBlinks(0)
 	{}
 
 	void update()
@@ -20,18 +42,25 @@ public:
 
 	bool isBlinking() { return nBlinks > 0; }
 
-	bool isAlive() { return hp > 0.0f; }
-
-	void getDamanagedIfIntruded(float enemy_pos)
+	bool getDamagedIfAttacked(const GameObject* attacker)
 	{
-		if (fabs(getPosition() - enemy_pos) > 2.0f) return;
-		hp -= damageRatio;
+
+		if (Player::getDamagedIfAttacked(attacker) == false) return false;
 		nBlinks = 2;
+		return true;
 	}
 
 	void displayStat()
 	{
-		printf("pos(%2.1f) hp(%2.1f), n_blinks(%2d)", getPosition(), hp, nBlinks);
+		Player::displayStat();
+		printf("n_blinks(%2d)", nBlinks);
+	}
+
+	void draw()
+	{
+		if (isBlinking() == false)
+			Player::draw();
+		else drawToRenderer(rand() % 2 ? getShape() : " ", getPosition());
 	}
 };
 
