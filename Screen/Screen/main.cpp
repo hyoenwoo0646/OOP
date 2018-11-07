@@ -1,26 +1,26 @@
 #define _CRT_SECURE_NO_WARNINGS
 
+#include <iostream>
 #include <ctime>
 #include <conio.h>
-
-using namespace std;
-
 #include "Players.h"
 #include "Enemies.h"
 #include "Bullets.h"
+
+using namespace std;
 
 
 int main()
 {
 	Renderer renderer;
-	Players players(&renderer);
-	Player* main = players.getMainCharacter();
-	Enemies enemies(&renderer, main);
-	Bullets bullets(&renderer, &players, &enemies);
+	Players players(renderer);
+	Enemies enemies(renderer, players);
+	Bullets bullets(renderer, players, enemies);
 	
 	clock_t current_tick, start_tick;
 
 	start_tick = clock();
+	auto main = players.getMainCharacter();
 	while (true)
 	{
 		current_tick = clock();
@@ -36,17 +36,17 @@ int main()
 
 			switch (key) {
 			case 'a': case 75:
-				main->move(-1);
+				players.move(-1);
 				break;
 			case 'd': case 77:
-				main->move(1);
+				players.move(1);
 				break;
 			case 72:
 				break;
 			case 80:
 				break;
 			case ' ':
-				bullets.fire(main);
+				bullets.fire();
 				break;
 			}				
 		}
@@ -63,7 +63,7 @@ int main()
 		renderer.render();
 		Sleep(66 - (clock()- current_tick));
 	}
-	renderer.clear();
+	system("cls");
 	Borland::gotoxy(0, 1); printf("# of killed enemies = %d, elapsed survival duration = %d seconds\n", 
 		enemies.getNumberOfKilled(),
 		(clock() - start_tick) / CLOCKS_PER_SEC );
