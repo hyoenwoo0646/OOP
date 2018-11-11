@@ -8,9 +8,6 @@
 #include <algorithm>
 #include <vector>
 
-using namespace std;
-
-
 class Bullets {
 	Renderer&	renderer;
 	Players&	players;
@@ -21,8 +18,8 @@ class Bullets {
 	int			n_penetrable_cool_time;
 
 public:
-	Bullets(Renderer& renderer, Players& players, Enemies& enemies)
-		: max_bullets(10), renderer(renderer), players(players), enemies(enemies), 
+	Bullets(Players& players, Enemies& enemies)
+		: max_bullets(10), renderer(Renderer::getInstance()), players(players), enemies(enemies), 
 		  n_remaining_cool_time(0), // the number of frames that bullet weapons are loaded.
 		  n_penetrable_cool_time(0) // the number of frames that PenetrableCannonball weapon is ready to use
 	{}
@@ -77,10 +74,10 @@ public:
 		if (n_penetrable_cool_time == 0) {
 			// if so, fire "PenetrableCannonball", while targetting the player.
 			n_penetrable_cool_time = 5 * 30;
-			add(new PenetrableCannonball(renderer, player_pos, player.getDirection()));
+			add(new PenetrableCannonball(player_pos, player.getDirection()));
 		} else {
 			// otherwise, fire an ordinary Cannonball.
-			add(new Cannonball(renderer, player_pos, player.getDirection()));
+			add(new Cannonball(player_pos, player.getDirection()));
 		}
 	}
 

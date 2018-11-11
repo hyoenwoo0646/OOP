@@ -9,17 +9,15 @@
 #include <vector>
 #include <algorithm>
 
-using namespace std;
-
 class Players {
 	Renderer&			renderer;
 	int					n_launch_cool_time;
 	vector<Ship*>		container;
 
 public:
-	Players(Renderer& renderer) : renderer(renderer), n_launch_cool_time(5*30)
+	Players() : renderer(Renderer::getInstance()), n_launch_cool_time(5*30)
 	{
-		container.push_back(new MainShip(renderer));
+		container.push_back(new MainShip() );
 	}
 
 	const vector<Ship*>&	getContainer() { return container; }
@@ -64,7 +62,7 @@ public:
 					target_pos = (probabilisticValue < 20) ?
 						target_pos - (1 + rand() % 4) : target_pos + (7 + rand() % 4);
 				}
-				container.push_back(new Boat(renderer, 5, target_pos, dir));
+				container.push_back(new Boat(5, target_pos, dir));
 				n_launch_cool_time = 5 * 30;
 			}
 		} else {
@@ -86,7 +84,7 @@ public:
 	void draw()
 	{
 		for (auto player : container) player->draw();
-		Borland::gotoxy(0, 1); printf("player "); for (auto player : container) player->displayStat(); printf("\n");
+		Borland::gotoxy(0, 1); cout << "player "; for (auto player : container) player->displayStat(); cout << "\n";
 	}
 
 	void getDamagedIfAttacked(const GameObject& attacker)

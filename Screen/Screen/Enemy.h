@@ -1,26 +1,22 @@
 #ifndef ENEMY_H_
 #define ENEMY_H_
 
-#include <cstring>
 #include "Players.h"
 #include "Bullet.h"
 
 
 class Enemy : public GameObject, public Damageable {
 	float		hp;
-	char		face[100];
-	char		faceAttacked[100];
+	string		face;
+	string		faceAttacked;
 	int			nAnimations;
 	Players&	players;
 	float		speed = 2.0f / 30;
 
 public:
-	Enemy(Renderer& renderer, Players& players, int pos = 50, int hp = 5, const char* face = "(*_*)", const char* faceAttacked = "(>_<)")
-		: GameObject(renderer, pos, face), Damageable(1.0f), players(players), nAnimations(0), hp(hp)
-	{
-		strcpy(this->face, face);
-		strcpy(this->faceAttacked, faceAttacked);
-	}
+	Enemy(Players& players, int pos = 50, int hp = 5, const string& face = "(*_*)")
+		: GameObject(pos, face), Damageable(1.0f), players(players), nAnimations(0), hp(hp), face(face), faceAttacked("(>_<)")
+	{}
 
 	void update()
 	{

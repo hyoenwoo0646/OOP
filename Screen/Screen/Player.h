@@ -8,8 +8,8 @@ class Player : public GameObject, public Damageable {
 	float	hp;
 	
 public:
-	Player(Renderer& renderer, int hp = 10, int pos = 20, const char *face= "(-_-)")
-		: GameObject(renderer, pos, face), Damageable(2.0f/30), hp(hp)
+	Player(int hp = 10, int pos = 20, const string& face= "(-_-)")
+		: GameObject(pos, face), Damageable(2.0f/30), hp(hp)
 	{}
 
 	bool isAlive() { return hp > 0.0f; }
@@ -30,18 +30,17 @@ public:
 
 class Ship : public Player {
 	Direction	direction;
-	char		faceLeft[100];
-	char		faceRight[100];
+	string 		faceLeft;
+	string		faceRight;
 public:
-	Ship(Renderer& renderer, int hp = 10, int pos = 20, const char* shape="|____|", Direction direction = Direction::Left) : Player(renderer, hp, pos, shape), direction(direction)
-	{
-		setDirectionalFace(shape, shape);
-	}
+	Ship(int hp = 10, int pos = 20, const string& shape="|____|", Direction direction = Direction::Left) 
+		: Player(hp, pos, shape), direction(direction), faceLeft(shape), faceRight(shape)
+	{}
 
-	void setDirectionalFace(const char* left, const char* right)
+	void setDirectionalFace(const string& left, const string& right)
 	{
-		strcpy(faceLeft, left);
-		strcpy(faceRight, right);
+		faceLeft = left;
+		faceRight = right;
 	}
 
 	void toggleDirection() 
@@ -60,14 +59,16 @@ public:
 class Boat : public Ship {
 
 public:
-	Boat(Renderer& renderer, int hp = 5, int pos = 20, Direction direction=Direction::Left) : Ship(renderer, hp, pos, "+", direction) {}
+	Boat(int hp = 5, int pos = 20, Direction direction=Direction::Left) : Ship(hp, pos, "+", direction) {}
 
 };
 
 class MainShip : public Ship {
 
 public:
-	MainShip(Renderer& renderer, int hp = 10, int pos = 20, const char* shape="-____|", Direction direction=Direction::Left) : Ship(renderer, hp, pos, shape, direction) {
+	MainShip(int hp = 10, int pos = 20, const string& shape="-____|", Direction direction=Direction::Left) 
+		: Ship(hp, pos, shape, direction) 
+	{
 		setDirectionalFace("-____|", "|____-");
 	}
 };
@@ -75,8 +76,8 @@ public:
 class BlinkablePlayer : public Player {
 	int		nBlinks;
 public:
-	BlinkablePlayer(Renderer& renderer, int hp = 10, int pos = 20 )
-		: Player(renderer, hp, pos), nBlinks(0)
+	BlinkablePlayer(int hp = 10, int pos = 20 )
+		: Player(hp, pos), nBlinks(0)
 	{}
 
 	void update()
@@ -97,7 +98,7 @@ public:
 	void displayStat()
 	{
 		Player::displayStat();
-		printf("n_blinks(%2d)", nBlinks);
+		cout << "n_blinks(" << nBlinks << ")";
 	}
 
 	void draw()

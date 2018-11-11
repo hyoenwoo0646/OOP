@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <vector>
 
-using namespace std;
-
 class Enemies {
 	Renderer&			renderer;
 	Players&			players;
@@ -19,9 +17,9 @@ class Enemies {
 	const unsigned int max_enemies;
 
 public:
-	Enemies(Renderer& renderer, Players& players)
-		: renderer(renderer), n_killed(0), n_remainings_for_respawn(30), players(players), max_enemies(5)
-	{	container.push_back(new Enemy(renderer, players, rand() % renderer.getScreenLength())); }
+	Enemies(Players& players)
+		: renderer(Renderer::getInstance()), n_killed(0), n_remainings_for_respawn(30), players(players), max_enemies(5)
+	{	container.push_back(new Enemy(players, rand() % renderer.getScreenLength())); }
 
 	int getNumberOfKilled() { return n_killed; }
 
@@ -31,7 +29,7 @@ public:
 		if (n_remainings_for_respawn <= 0) {
 			// reset the timer for the next enemy spawning
 			if (container.size() < max_enemies)
-				container.push_back(new Enemy(renderer, players, rand() % renderer.getScreenLength()));
+				container.push_back(new Enemy(players, rand() % renderer.getScreenLength()));
 			n_remainings_for_respawn = 30;
 		} else {
 			n_remainings_for_respawn--;

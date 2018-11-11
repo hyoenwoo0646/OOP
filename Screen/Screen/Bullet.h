@@ -1,18 +1,17 @@
 #ifndef BULLET_H_
 #define BULLET_H_
 
-#include <cstring>
 #include "GameObject.h"
 
 class Bullet : public GameObject {
 	float damagePower;
 public:
-	Bullet(Renderer& renderer, int player_pos = -1, const char* shape = ">", float damagePower = 1.0f)
-		: GameObject(renderer, player_pos, shape), damagePower(damagePower) {}
+	Bullet(int player_pos = -1, const char* shape = ">", float damagePower = 1.0f)
+		: GameObject(player_pos, shape), damagePower(damagePower) {}
 
 	virtual Direction getDirection() const 
 	{
-		return strcmp(getShape(), ">") == 0 ? Direction::Right : Direction::Left;
+		return getShape() == ">" ? Direction::Right : Direction::Left;
 	}
 
 	float getDamagePower() const { return damagePower; } // damage power getter 
@@ -28,8 +27,8 @@ public:
 		if (isAlive() == false) return;
 
 		// movement is decided by its shape.
-		if (strcmp(getShape(), ">") == 0) move(1.0f);
-		else if (strcmp(getShape(), "<") == 0) move(-1.0f);
+		if (getShape() == ">") move(1.0f);
+		else if (getShape() == "<") move(-1.0f);
 	}
 
 	bool isAlive() 
@@ -44,8 +43,8 @@ public:
 class Cannonball : public Bullet {
 	Direction direction;
 public:
-	Cannonball(Renderer& renderer, int player_pos = -1, Direction direction = Direction::Left, const char* shape = "*" )
-		: Bullet(renderer, player_pos, shape), direction(direction) {}
+	Cannonball(int player_pos = -1, Direction direction = Direction::Left, const char* shape = "*" )
+		: Bullet(player_pos, shape), direction(direction) {}
 
 	Direction getDirection() const { return direction; }
 
@@ -62,8 +61,8 @@ public:
 // otherwise, its appears inappropriately.
 class PenetrableCannonball : public Cannonball {	
 public:
-	PenetrableCannonball(Renderer& renderer, int player_pos = -1, Direction direction = Direction::Left) 
-		: Cannonball(renderer, player_pos, direction, direction == Direction::Left ? "<-" : "->") {}
+	PenetrableCannonball(int player_pos = -1, Direction direction = Direction::Left) 
+		: Cannonball(player_pos, direction, direction == Direction::Left ? "<-" : "->") {}
 
 	void hit() { setDamagePower(getDamagePower()- 0.2f); };
 };

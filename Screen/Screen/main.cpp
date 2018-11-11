@@ -7,15 +7,11 @@
 #include "Enemies.h"
 #include "Bullets.h"
 
-using namespace std;
-
-
 int main()
 {
-	Renderer renderer;
-	Players players(renderer);
-	Enemies enemies(renderer, players);
-	Bullets bullets(renderer, players, enemies);
+	Players players;
+	Enemies enemies(players);
+	Bullets bullets(players, enemies);
 	
 	clock_t current_tick, start_tick;
 
@@ -24,7 +20,7 @@ int main()
 	while (true)
 	{
 		current_tick = clock();
-		renderer.clear();
+		Renderer::getInstance().clear();
 
 		if (_kbhit()) {
 			char key = _getch();
@@ -60,13 +56,13 @@ int main()
 		bullets.draw();
 		players.draw();
 		
-		renderer.render();
+		Renderer::getInstance().render();
 		Sleep(66 - (clock()- current_tick));
 	}
 	system("cls");
-	Borland::gotoxy(0, 1); printf("# of killed enemies = %d, elapsed survival duration = %d seconds\n", 
-		enemies.getNumberOfKilled(),
-		(clock() - start_tick) / CLOCKS_PER_SEC );
+	Borland::gotoxy(0, 1); 
+	cout << enemies.getNumberOfKilled() << " enemies were killed, survival duration : "
+		<< ((clock() - start_tick) / CLOCKS_PER_SEC) << " seconds\n";
 
 	return 0;
 }
