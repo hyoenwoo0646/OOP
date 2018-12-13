@@ -14,10 +14,10 @@ class Scene {
 
 public:
     Scene(): exitFlag(false) {
-        auto player = new GameObject;
-        //player->AddComponent<MoveScript>();
-        auto enemy = new GameObject;
-        //enemy->AddComponent<AutoMoveScript>();
+        auto player = new GameObject("player");
+        player->AddComponent<MoveScript>();
+        auto enemy = new GameObject("enemy");
+        enemy->AddComponent<AutoMoveScript>();
 
         gameObjects.push_back(player);
         gameObjects.push_back(enemy);        
@@ -38,7 +38,7 @@ public:
 
             for (auto obj : gameObjects)
             {
-                //obj->update();
+                obj->update();
             }
 
             InputManager::endOfFrame();
