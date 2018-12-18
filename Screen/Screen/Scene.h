@@ -3,6 +3,7 @@
 #include <vector>
 #include "InputManager.h"
 #include "GameObject.h"
+#include "Component.h"
 
 using namespace std;
 
@@ -16,8 +17,18 @@ public:
     Scene(): exitFlag(false) {
         auto player = new GameObject("player");
         player->AddComponent<MoveScript>();
+        auto move = player->GetComponent<MoveScript>();
+        move->Start();
+        
         auto enemy = new GameObject("enemy");
         enemy->AddComponent<AutoMoveScript>();
+        auto autoMove = enemy->GetComponent<AutoMoveScript>();
+        autoMove->Start();
+        enemy->AddComponent<MyNewScript>();
+        auto myNew = enemy->GetComponent<MyNewScript>();
+        myNew->Start();
+
+        
 
         gameObjects.push_back(player);
         gameObjects.push_back(enemy);        

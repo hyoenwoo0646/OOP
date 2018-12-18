@@ -4,11 +4,10 @@
 #include <iostream>
 #include <cstring>
 #include <string>
+#include <vector>
+#include "Component.h"
 
 using namespace std;
-
-class Component;
-class Transform;
 
 class GameObject {
     string name;
@@ -18,7 +17,7 @@ class GameObject {
     Transform* transform;
 
 public:
-    GameObject(const string& name, const string& tag) : name(name), tag(tag), transform(new Transform) {
+    GameObject(const string& name, const string& tag="unknown") : name(name), tag(tag), transform(new Transform(this)) {
         components.push_back(transform);
     }
     ~GameObject() {
@@ -40,7 +39,28 @@ public:
     Transform* getTransform() { return transform; }
 
     template<typename T>
-    void AddComponent<T>();
+    void AddComponent() {
+        T* t = new T(this, this->getTransform());
+        if (!dynamic_cast<Component*>(t)) {
+            delete t;
+            return;
+        }
+        components.push_back(t);
+    }
+
+    template<typename T>
+    Component* GetComponent() {
+        for (auto comp : components)
+        {
+            if (dynamic_cast<T *>(comp) != nullptr) return comp;
+        }
+        return nullptr;
+    }
+
+    const string getName() {
+        return name; 
+    }
+
     
 
 };

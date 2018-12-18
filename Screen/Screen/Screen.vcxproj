@@ -148,7 +148,9 @@
   <ItemGroup>
     <ClCompile Include="Component.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Vector2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Component.h" />
@@ -156,6 +158,7 @@
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Utils.h" />
+    <ClInclude Include="Vector2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
