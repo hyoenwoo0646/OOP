@@ -1,68 +1,85 @@
+// Screen.cpp : 이 파일에는 'main' 함수가 포함됩니다. 거기서 프로그램 실행이 시작되고 종료됩니다.
+//
 #define _CRT_SECURE_NO_WARNINGS
-
 #include <iostream>
-#include <ctime>
 #include <conio.h>
-#include "Players.h"
-#include "Enemies.h"
-#include "Bullets.h"
+#include <Windows.h>
+
+using namespace std;
+
+void draw(char* loc, const char* face)
+{
+	strncpy(loc, face, strlen(face));
+}
 
 int main()
 {
-	Players players;
-	Enemies enemies(players);
-	Bullets bullets(players, enemies);
-	
-	clock_t current_tick, start_tick;
+	const int screen_size = 80;
+	char screen[screen_size + 1];
+	char player_face[] = "(^__^)";
+	int player_pos = 20;
+	char enemy_face[] = "(*--*)";
+	int  enemy_pos = 60;
+	const int max_bullets = 100;
+	char bullet_face[] = "+";
+	int bullet_positions[max_bullets];
 
-	start_tick = clock();
-	auto main = players.getMainCharacter();
+	for (int i = 0; i < max_bullets; ++i)
+		bullet_positions[i] = -1;
+
 	while (true)
 	{
-		current_tick = clock();
-		Renderer::getInstance().clear();
+		for (int i = 0; i < screen_size; i++) screen[i] = ' ';
+		screen[screen_size] = '\0';
 
-		if (_kbhit()) {
-			char key = _getch();
-			//printf("%d\n", key);
-			if (key == 27) break;
-			if (key == -32) {
-				key = _getch();
-			}
-
-			switch (key) {
-			case 'a': case 75:
-				players.move(-1);
+		if (_kbhit())
+		{
+			int c = _getch();
+			switch (c) {
+			case 'a':
+				player_pos = (player_pos - 1) % screen_size;
 				break;
-			case 'd': case 77:
-				players.move(1);
-				break;
-			case 72:
-				break;
-			case 80:
+			case 'd':
+				player_pos = (player_pos + 1) % screen_size;
 				break;
 			case ' ':
-				bullets.fire();
+				int i = 0;
+				for (; i < max_bullets; i++) {
+					if (bullet_positions[i] == -1) break;
+				}
+				if (i < max_bullets) {
+					bullet_positions[i] = player_pos;
+				}
 				break;
-			}				
+			}
 		}
-		enemies.update();
-		bullets.update();
-		players.update();
-		main = players.getMainCharacter();
-		if (main == nullptr) break;
-		
-		enemies.draw();
-		bullets.draw();
-		players.draw();
-		
-		Renderer::getInstance().render();
-		Sleep(66 - (clock()- current_tick));
+		draw(&screen[player_pos], player_face);
+		draw(&screen[enemy_pos], enemy_face);
+		for (int i = 0; i < max_bullets; ++i)
+		{
+			if (bullet_positions[i] == -1) continue;
+			draw(&screen[bullet_positions[i]], bullet_face);
+		}
+
+		// update
+		enemy_pos = (enemy_pos + rand() % 3 - 1) % screen_size;
+		for (int i = 0; i < max_bullets; ++i)
+		{
+			if (bullet_positions[i] == -1) continue;
+			if (bullet_positions[i] < enemy_pos) {
+				bullet_positions[i] = (bullet_positions[i] + 1) % screen_size;
+			}
+			else if (bullet_positions[i] > enemy_pos) {
+				bullet_positions[i] = (bullet_positions[i] - 1) % screen_size;
+			}
+			else {
+				bullet_positions[i] = -1;
+			}
+		}
+		printf("%s\r", screen);
+		Sleep(66);
 	}
-	system("cls");
-	Borland::gotoxy(0, 1); 
-	cout << enemies.getNumberOfKilled() << " enemies were killed, survival duration : "
-		<< ((clock() - start_tick) / CLOCKS_PER_SEC) << " seconds\n";
+
 
 	return 0;
 }
