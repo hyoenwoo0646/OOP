@@ -12,20 +12,33 @@ void draw(char* loc, const char* face)
 	strncpy(loc, face, strlen(face));
 }
 
+struct GameObject {
+	int		pos;
+	char	face[20];
+
+	GameObject( int pos, const char* face) {
+		this->pos = pos;
+		strcpy(this->face, face);
+	}
+
+	void draw(char* screen)
+	{
+		strncpy(&screen[pos],face, strlen(face));
+	}
+
+	~GameObject() {
+
+	}
+};
+
+
 int main()
 {
 	const int screen_size = 80;
 	char screen[screen_size + 1];
-	char player_face[] = "(^__^)";
-	int player_pos = 20;
-	char enemy_face[] = "(*--*)";
-	int  enemy_pos = 60;
-	const int max_bullets = 100;
-	char bullet_face[] = "+";
-	int bullet_positions[max_bullets];
-
-	for (int i = 0; i < max_bullets; ++i)
-		bullet_positions[i] = -1;
+	GameObject player( 20, "(^__^)" );
+	GameObject enemy (60, "(*__*)");
+	GameObject bullet(-1, "+");
 
 	while (true)
 	{
@@ -37,45 +50,35 @@ int main()
 			int c = _getch();
 			switch (c) {
 			case 'a':
-				player_pos = (player_pos - 1) % screen_size;
+				player.pos = (player.pos - 1) % screen_size;
 				break;
 			case 'd':
-				player_pos = (player_pos + 1) % screen_size;
+				player.pos = (player.pos + 1) % screen_size;
 				break;
 			case ' ':
-				int i = 0;
-				for (; i < max_bullets; i++) {
-					if (bullet_positions[i] == -1) break;
-				}
-				if (i < max_bullets) {
-					bullet_positions[i] = player_pos;
-				}
+				bullet.pos = player.pos;
 				break;
 			}
 		}
-		draw(&screen[player_pos], player_face);
-		draw(&screen[enemy_pos], enemy_face);
-		for (int i = 0; i < max_bullets; ++i)
-		{
-			if (bullet_positions[i] == -1) continue;
-			draw(&screen[bullet_positions[i]], bullet_face);
-		}
+		player.draw(screen);
+		enemy.draw(screen);
+		if (bullet.pos != -1)
+			bullet.draw(screen);
 
 		// update
-		enemy_pos = (enemy_pos + rand() % 3 - 1) % screen_size;
-		for (int i = 0; i < max_bullets; ++i)
-		{
-			if (bullet_positions[i] == -1) continue;
-			if (bullet_positions[i] < enemy_pos) {
-				bullet_positions[i] = (bullet_positions[i] + 1) % screen_size;
+		enemy.pos = (enemy.pos + rand() % 3 - 1) % screen_size;
+		if (bullet.pos != -1) {
+			if (bullet.pos < enemy.pos) {
+				bullet.pos = (bullet.pos + 1) % screen_size;
 			}
-			else if (bullet_positions[i] > enemy_pos) {
-				bullet_positions[i] = (bullet_positions[i] - 1) % screen_size;
+			else if (bullet.pos > enemy.pos) {
+				bullet.pos = (bullet.pos - 1) % screen_size;
 			}
 			else {
-				bullet_positions[i] = -1;
+				bullet.pos = -1;
 			}
 		}
+		
 		printf("%s\r", screen);
 		Sleep(66);
 	}
