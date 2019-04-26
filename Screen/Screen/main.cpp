@@ -12,33 +12,55 @@ void draw(char* loc, const char* face)
 	strncpy(loc, face, strlen(face));
 }
 
-struct GameObject {
-	int		pos;
-	char	face[20];
+const int screen_size = 80;
 
-	GameObject( int pos, const char* face) {
-		this->pos = pos;
+class Player {
+	int pos;
+	int hp;
+	int mp;
+	char face[20];
+
+public:
+	Player(int position, int hp, int mp, const char* face)
+		: pos(position), hp(hp), mp(mp)
+	{
 		strcpy(this->face, face);
 	}
 
-	void draw(char* screen)
+	void increasePosition(unsigned int inc)
 	{
-		strncpy(&screen[pos],face, strlen(face));
+		if (this->pos + inc >= screen_size) return;
+		this->pos = this->pos + inc;
 	}
 
-	~GameObject() {
-
+	void setPosition(int pos) // setter
+	{
+		this->pos = pos;
 	}
+
+	int getPosition() // getter on "pos"
+	{
+		return pos;
+	}
+
 };
 
+class Enemy {
+
+};
+
+class Bullet {
+
+};
 
 int main()
 {
-	const int screen_size = 80;
 	char screen[screen_size + 1];
-	GameObject player( 20, "(^__^)" );
-	GameObject enemy (60, "(*__*)");
-	GameObject bullet(-1, "+");
+	Player player(30, 10, 10, "(^_^)");
+	Enemy enemy;
+	Bullet bullet;
+
+	player.setPosition(20);
 
 	while (true)
 	{
