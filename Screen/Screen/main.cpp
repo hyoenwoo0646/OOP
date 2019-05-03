@@ -12,25 +12,48 @@ void draw(char* loc, const char* face)
 	strncpy(loc, face, strlen(face));
 }
 
-const int screen_size = 80;
+class Screen {
+	int size;
+	char* screen;
+
+public:
+	Screen(int sz) : size(sz), screen(new char[sz + 1]) {}
+	~Screen() { delete[] screen; }
+
+	void draw(int pos, const char* face) 
+	{
+		if (face == nullptr) return;
+		if (pos < 0 || pos >= size) return;
+		strncpy(&screen[pos], face, strlen(face));
+	}
+
+	void render() 
+	{
+		printf("%s\r", screen);
+	}
+
+	void clear()
+	{
+		memset(screen, ' ', size);
+		screen[size] = '\0';
+	}
+
+	int length()
+	{
+		return size;
+	}
+
+};
 
 class Player {
 	int pos;
-	int hp;
-	int mp;
 	char face[20];
+	Screen* screen;
 
 public:
-	Player(int position, int hp, int mp, const char* face)
-		: pos(position), hp(hp), mp(mp)
+	Player(int pos, const char* face, Screen* screen) : pos(pos), screen(screen)
 	{
 		strcpy(this->face, face);
-	}
-
-	void increasePosition(unsigned int inc)
-	{
-		if (this->pos + inc >= screen_size) return;
-		this->pos = this->pos + inc;
 	}
 
 	void setPosition(int pos) // setter
@@ -43,68 +66,161 @@ public:
 		return pos;
 	}
 
+	void moveLeft()
+	{
+		pos--;
+	}
+
+	void moveRight()
+	{
+		pos--;
+	}
+
+	void draw()
+	{
+		screen->draw(pos, face);
+	}
+
+	void update()
+	{
+
+	}
+
 };
 
 class Enemy {
+	int pos;
+	char face[20];
+	Screen* screen;
 
+public:
+	Enemy(int pos, const char* face, Screen* screen) : pos(pos), screen(screen)
+	{
+		strcpy(this->face, face);
+	}
+
+	void setPosition(int pos)
+	{
+		this->pos = pos;
+	}
+
+	int getPosition()
+	{
+		return pos;
+	}
+
+	void draw()
+	{
+		screen->draw(pos, face);
+	}
+
+	void moveRandom()
+	{
+		pos = pos + rand() % 3 - 1;
+	}
+
+	void update()
+	{
+		moveRandom();
+	}
 };
 
 class Bullet {
+	int pos;
+	char face[20];
+	bool isFiring;
+	Screen* screen;
 
+public:
+	Bullet(int pos, const char* face, Screen* screen) : pos(pos), isFiring(false), screen(screen)
+	{
+		strcpy(this->face, face);
+	}
+
+	void setPosition(int pos)
+	{
+		this->pos = pos;
+	}
+
+	int getPosition()
+	{
+		return pos;
+	}
+
+	void moveLeft()
+	{
+		pos--;
+	}
+
+	void moveRight()
+	{
+		pos--;
+	}
+
+	void draw()
+	{
+		if (isFiring == false) return;
+		screen->draw(pos, face);
+	}
+
+	void fire(int player_pos)
+	{
+		isFiring = true;
+		pos = player_pos;
+	}
+
+	void update(int enemy_pos)
+	{
+		if (isFiring == false) return;
+		if (pos < enemy_pos) {
+			pos = pos + 1;
+		}
+		else if (pos > enemy_pos) {
+			pos = pos - 1;
+		}
+		else {
+			isFiring = false;
+		}
+	}
 };
 
 int main()
 {
-	char screen[screen_size + 1];
-	Player player(30, 10, 10, "(^_^)");
-	Enemy enemy;
-	Bullet bullet;
-
-	player.setPosition(20);
+	Screen screen{ 80 };
+	Player player = { 30, "(^_^)", &screen };
+	Enemy enemy{ 60, "(*--*)", &screen };
+	Bullet bullet( -1, "+", &screen);
 
 	while (true)
 	{
-		for (int i = 0; i < screen_size; i++) screen[i] = ' ';
-		screen[screen_size] = '\0';
+		screen.clear();
 
 		if (_kbhit())
 		{
 			int c = _getch();
 			switch (c) {
 			case 'a':
-				player.pos = (player.pos - 1) % screen_size;
+				player.moveLeft();
 				break;
 			case 'd':
-				player.pos = (player.pos + 1) % screen_size;
+				player.moveRight();
 				break;
 			case ' ':
-				bullet.pos = player.pos;
+				bullet.fire(player.getPosition());
 				break;
 			}
 		}
-		player.draw(screen);
-		enemy.draw(screen);
-		if (bullet.pos != -1)
-			bullet.draw(screen);
+		player.draw();
+		enemy.draw();
+		bullet.draw();
 
-		// update
-		enemy.pos = (enemy.pos + rand() % 3 - 1) % screen_size;
-		if (bullet.pos != -1) {
-			if (bullet.pos < enemy.pos) {
-				bullet.pos = (bullet.pos + 1) % screen_size;
-			}
-			else if (bullet.pos > enemy.pos) {
-				bullet.pos = (bullet.pos - 1) % screen_size;
-			}
-			else {
-				bullet.pos = -1;
-			}
-		}
+		player.update();
+		enemy.update();
+		bullet.update(enemy.getPosition());
 		
-		printf("%s\r", screen);
+		screen.render();
 		Sleep(66);
 	}
-
 
 	return 0;
 }
